@@ -44,7 +44,7 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-const GEMINI_API_KEY = "AQ.Ab8RN6Jkvzc8e6nsFf9KpdkorvPtK_58JLsgElI5eKH4v70TYwAQ.Ab8RN6Jkvzc8e6nsFf9KpdkorvPtK_58JLsgElI5eKH4v70TYw";
+
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
         tailwind.config = {
@@ -1955,20 +1955,23 @@ function roundRobin(n){
   return out;
 }
 
+const PLAYER_RATINGS={"Pelé": 96, "Lionel Messi": 96, "Diego Maradona": 96, "Cristiano Ronaldo": 95, "Ronaldo Nazário (R9)": 95, "Johan Cruyff": 95, "Zinedine Zidane": 95, "Alfredo Di Stéfano": 95, "Franz Beckenbauer": 95, "Paolo Maldini": 93, "Ronaldinho": 93, "Lev Yashin": 93, "Gianluigi Buffon": 93, "Ferenc Puskás": 93, "Gerd Müller": 93, "Eusébio": 93, "Michel Platini": 93, "Thierry Henry": 93, "Xavi Hernández": 93, "Andrés Iniesta": 93, "Franco Baresi": 93, "Marco van Basten": 93, "Kylian Mbappé": 93, "Erling Haaland": 93, "Garrincha": 93, "Luka Modrić": 91, "Kevin De Bruyne": 91, "Virgil van Dijk": 91, "Cafu": 91, "Roberto Carlos": 91, "Kaká": 91, "Iker Casillas": 91, "Manuel Neuer": 91, "Sergio Ramos": 91, "Andrea Pirlo": 91, "Toni Kroos": 91, "Rodri": 91, "Robert Lewandowski": 91, "Karim Benzema": 91, "Zlatan Ibrahimović": 91, "Luis Suárez": 91, "Romário": 91, "Roberto Baggio": 91, "Fabio Cannavaro": 91, "Alessandro Nesta": 91, "Lothar Matthäus": 91, "George Best": 91, "Bobby Moore": 91, "Philipp Lahm": 91, "Oliver Kahn": 91, "Dino Zoff": 91, "Gordon Banks": 91, "Jude Bellingham": 91, "Mohamed Salah": 91, "Vinícius Júnior": 91, "Harry Kane": 91, "Carles Puyol": 91, "Sergio Busquets": 91, "Kenny Dalglish": 91, "Rivaldo": 91, "Zico": 91, "Steven Gerrard": 89, "Frank Lampard": 89, "Paul Scholes": 89, "Neymar Jr": 89, "Thibaut Courtois": 89, "Alisson Becker": 89, "Peter Schmeichel": 89, "Edwin van der Sar": 89, "Didier Drogba": 89, "Raúl": 89, "Gabriel Batistuta": 89, "Luis Figo": 89, "Arjen Robben": 89, "Franck Ribéry": 89, "Eden Hazard": 89, "Wayne Rooney": 89, "Sergio Agüero": 89, "Andriy Shevchenko": 89, "Dennis Bergkamp": 89, "Alessandro Del Piero": 89, "Francesco Totti": 89, "Patrick Vieira": 89, "Claude Makélé": 89, "Xabi Alonso": 89, "Roy Keane": 89, "Thiago Silva": 89, "Javier Zanetti": 89, "Dani Alves": 89, "Marcelo": 89, "Rio Ferdinand": 89, "John Terry": 89, "Pavel Nedvěd": 89, "Clarence Seedorf": 89, "Ruud Gullit": 89, "Lilian Thuram": 89, "Marcel Desailly": 89, "Rúben Dias": 89, "Ruben Dias": 89, "Lamine Yamal": 89, "Jamal Musiala": 89, "Florian Wirtz": 89, "Pedri": 89, "Federico Valverde": 89, "Joshua Kimmich": 89, "Antoine Griezmann": 89, "Son Heung-min": 89, "Hristo Stoichkov": 89, "George Weah": 89, "Ruud van Nistelrooy": 89, "Juan Román Riquelme": 89, "Miroslav Klose": 89, "Gianluigi Donnarumma": 89, "Marc-André ter Stegen": 89, "Petr Čech": 89, "Achraf Hakimi": 89, "William Saliba": 89, "Trent Alexander-Arnold": 89, "Lautaro Martínez": 89, "Bukayo Saka": 89, "David Silva": 89, "Mesut Özil": 89, "Gareth Bale": 89, "Yaya Touré": 89, "Ashley Cole": 89, "Nemanja Vidić": 89, "Jaap Stam": 89, "Gerard Piqué": 89};
+function playerRating(n){return PLAYER_RATINGS[n]||85;}
 const offlineEngine = {
   hash(s){let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967295;},
   rating(team){
-    const ps=team.players, avg=ps.reduce((s,p)=>s+(p.price||0),0)/Math.max(1,ps.length);
-    const star=ps.reduce((s,p)=>s+this.hash(p.name),0)/Math.max(1,ps.length);
-    const has=pos=>ps.some(p=>new RegExp(pos).test(p.pos));
-    const balance=(has('GK')?1:0)+(has('CB|LB|RB|DEF|WB')?1:0)+(has('CM|CDM|CAM|MID')?1:0)+(has('ST|CF|LW|RW|FW')?1:0);
+    const ps=team.players; if(!ps.length) return 1;
+    const avg=ps.reduce((s,p)=>s+playerRating(p.name),0)/ps.length;
+    const cnt=re=>ps.filter(p=>re.test(p.pos)).length;
+    const gk=cnt(/GK/),def=cnt(/CB|LB|RB|DEF|WB/),mid=cnt(/CM|CDM|CAM|MID|LM|RM/),att=cnt(/ST|CF|LW|RW|FW/);
+    let bal=(gk?0:-4)+(def>=3?0:-(3-def)*1.5)+(mid>=2?0:-(2-mid)*1.5)+(att>=1?0:-3);
     const t=(team.tactics||'').toLowerCase();
-    const tactic=/press|attack|high/.test(t)?.3:/counter|compact|defen|park/.test(t)?.15:.2;
-    return 1+avg*.08+star*.9+balance*.25+tactic;
+    const tac=/press|possession|attack|counter|compact|defen|wing|tiki/.test(t)?0.5:0;
+    return avg+bal+tac;
   },
   simulate(home,away){
     const rh=this.rating(home), ra=this.rating(away), rnd=Math.random;
-    const lam=(r,o)=>Math.max(.3,1.35*r/o);
+    const lam=(r,o)=>Math.min(4.5,Math.max(.2,1.35*Math.exp((r-o)*0.12)));
     const pois=l=>{let L=Math.exp(-l),k=0,p=1;do{k++;p*=rnd();}while(p>L);return Math.min(k-1,6);};
     const gh=pois(lam(rh,ra)), ga=pois(lam(ra,rh));
     const pick=(t,re)=>{const f=t.players.filter(p=>re.test(p.pos));const l=f.length?f:t.players;return l[Math.floor(rnd()*l.length)].name;};
@@ -1985,7 +1988,7 @@ const offlineEngine = {
     ];
     const minutes=new Set(goals.map(g=>g.minute));
     const fill=[];while(fill.length<7){const m=1+Math.floor(rnd()*89);if(!minutes.has(m)){minutes.add(m);fill.push(m);}}
-    const all=[...goals.map(g=>({...g,goal:true})),...fill.map(m=>({minute:m,side:rnd()<rh/(rh+ra)?0:1}))].sort((x,y)=>x.minute-y.minute);
+    const all=[...goals.map(g=>({...g,goal:true})),...fill.map(m=>({minute:m,side:rnd()<1/(1+Math.exp(-(rh-ra)*0.15))?0:1}))].sort((x,y)=>x.minute-y.minute);
     events.push({minute:0,homeScore:0,awayScore:0,commentary:`Kick-off! ${home.name} vs ${away.name} — the rivalry is on.`});
     for(const e of all){
       const t=teams[e.side], o=teams[1-e.side];
@@ -1998,23 +2001,27 @@ const offlineEngine = {
     const top=Object.entries(scorers).sort((x,y)=>y[1]-x[1])[0];
     const motm=top?top[0]:pick(h>=a?home:away,gk);
     return {homeScore:h,awayScore:a,events,manOfTheMatch:motm,
-      analysis:`Offline engine · ${home.name} rating ${rh.toFixed(2)} vs ${away.name} ${ra.toFixed(2)} (price, balance, chemistry & tactics).`,
+      analysis:`Offline engine · ${home.name} rating ${rh.toFixed(2)} vs ${away.name} ${ra.toFixed(2)} (player quality, positional balance & tactics — prices ignored).`,
       verdict:h===a?'Honours even after a tense battle.':`${h>a?home.name:away.name} edge it on tactical balance.`};
   }
 };
 
 const gemini = {
-  enabled(){return GEMINI_API_KEY && GEMINI_API_KEY!=="YOUR_GEMINI_API_KEY";},
+  key(){try{return (localStorage.getItem('fda_gemini_key')||'').trim();}catch(e){return '';}},
+  enabled(){return !!this.key();},
+  lastError:'',
   async simulate(home,away,mode,signal){
+    const clean=tm=>({name:tm.name,tactics:tm.tactics||'',players:tm.players.map(p=>({name:p.name,pos:p.pos,rating:playerRating(p.name)}))});
+    home=Object.assign({},home);away=Object.assign({},away);const H=clean(home),A=clean(away);
     const prompt=`You are an elite football match simulator for a fantasy draft (${mode}).
 Evaluate: 1) Club & International Chemistry (real-world synergies e.g. Barcelona tiki-taka, Real Madrid European pedigree, national team partnerships); 2) Tactical Balance (attack vs defensive midfield cover, pace on wings vs low block); 3) Key Match Moments.
-HOME: ${JSON.stringify(home)}
-AWAY: ${JSON.stringify(away)}
-Prices are auction dollars paid. Produce a realistic 90-minute match with 10-14 minute-by-minute events (saves, fouls, tactical shifts, goals) naming drafted players only.
+HOME: ${JSON.stringify(H)}
+AWAY: ${JSON.stringify(A)}
+Judge ONLY on football: player quality (rating 80-96), positional balance, tactics and chemistry. Money and auction prices do not exist and must have zero influence. The stronger, better-balanced squad should usually win; upsets should be rare. Produce a realistic 90-minute match with 10-14 minute-by-minute events (saves, fouls, tactical shifts, goals) naming drafted players only.
 Return ONLY JSON: {"analysis":string,"homeScore":int,"awayScore":int,"events":[{"minute":int,"homeScore":int,"awayScore":int,"goal":bool,"commentary":string}],"manOfTheMatch":string,"verdict":string}. Events sorted by minute, scores cumulative, last event minute 90 matching final score.`;
-    const res=await fetch(`${GEMINI_URL}?key=${encodeURIComponent(GEMINI_API_KEY)}`,{method:'POST',signal,headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:.9}})});
-    if(!res.ok) throw new Error('Gemini '+res.status);
+    const res=await fetch(`${GEMINI_URL}?key=${encodeURIComponent(this.key())}`,{method:'POST',signal,headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:.3}})});
+    if(!res.ok){let m='';try{m=(await res.json())?.error?.message||'';}catch(e){}throw new Error('Gemini '+res.status+(m?': '+m:''));}
     const data=await res.json();
     const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
     const r=JSON.parse(text.replace(/^```json|```$/g,'').trim());
@@ -2044,7 +2051,7 @@ const matchRoom = {
     const n=app.managers.length;
     this.fixtures=roundRobin(n);this.results=[];
     this.el('tour-format').textContent=n===2?'Championship Grand Final — one match decides the title.':`${n}-manager Round-Robin League — ${this.fixtures.length} fixtures, top of the table is crowned.`;
-    this.el('engine-badge').textContent=gemini.enabled()?'GEMINI LIVE':'OFFLINE ENGINE';
+    this.el('engine-badge').textContent=gemini.enabled()?'GEMINI LIVE':'OFFLINE ENGINE — tap 🔑 to add Gemini key';
     this.el('match-status').textContent='Ready for kickoff';this.el('match-scoreboard').hidden=true;this.el('champion').hidden=true;
     ['match-analysis','match-verdict','match-commentary'].forEach(id=>this.el(id).textContent='');
     this.el('league-wrap').hidden=n<3;
@@ -2081,7 +2088,7 @@ const matchRoom = {
       if(gemini.enabled()){
         this.controller=new AbortController();
         try{report=await gemini.simulate(home,away,app.gameMode,this.controller.signal);report.analysis='Gemini · '+(report.analysis||'');}
-        catch(e){if(run!==this.generation)return;this.el('engine-badge').textContent='OFFLINE ENGINE';}
+        catch(e){if(run!==this.generation)return;if(e.name==='AbortError')return;this.el('engine-badge').textContent='OFFLINE (Gemini error)';if(typeof showGeminiError==='function')showGeminiError(e.message);}
         this.controller=null;
       }
       if(!report) report=offlineEngine.simulate(home,away);
@@ -2134,6 +2141,45 @@ const matchRoom = {
   }
 };
 
+</script>
+
+<style>
+#gk-btn{position:fixed;top:12px;right:12px;z-index:9999;background:#f59e0b;color:#0f172a;font-weight:900;border:none;border-radius:999px;padding:10px 14px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer}
+#gk-modal{position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.85);display:none;align-items:center;justify-content:center;padding:16px}
+#gk-modal.open{display:flex}
+#gk-box{background:#0f172a;border:1px solid #334155;border-radius:18px;padding:20px;width:100%;max-width:420px;color:#e2e8f0;font-family:inherit}
+#gk-box h3{margin:0 0 6px;font-size:18px;font-weight:900;color:#fbbf24}
+#gk-box p{font-size:13px;color:#94a3b8;margin:0 0 12px}
+#gk-input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#020617;color:#fff;font-size:15px}
+#gk-box .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+#gk-box button{flex:1;padding:11px;border-radius:10px;border:none;font-weight:800;cursor:pointer;font-size:14px}
+.gk-save{background:#f59e0b;color:#0f172a}.gk-test{background:#1e293b;color:#e2e8f0;border:1px solid #475569!important}.gk-clear{background:#7f1d1d;color:#fecaca}.gk-close{background:transparent;color:#94a3b8}
+#gk-status{margin-top:12px;font-size:13px;font-weight:700;min-height:18px;word-break:break-word}
+</style>
+<button id="gk-btn" type="button" onclick="openGeminiKey()">🔑 Gemini</button>
+<div id="gk-modal" role="dialog" aria-modal="true" aria-labelledby="gk-title"><div id="gk-box">
+<h3 id="gk-title">🔑 Gemini API Key</h3>
+<p>Paste your key from Google AI Studio. It's saved only on this device's browser.</p>
+<input id="gk-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIzaSy...">
+<div class="row"><button class="gk-save" type="button" onclick="saveGeminiKey()">Save</button><button class="gk-test" type="button" onclick="testGeminiKey()">Test key</button></div>
+<div class="row"><button class="gk-clear" type="button" onclick="clearGeminiKey()">Remove key</button><button class="gk-close" type="button" onclick="closeGeminiKey()">Close</button></div>
+<div id="gk-status"></div></div></div>
+<script>
+function gkStatus(msg,ok){const s=document.getElementById('gk-status');s.textContent=msg;s.style.color=ok===true?'#4ade80':ok===false?'#f87171':'#cbd5e1';}
+function gkRefresh(){const on=gemini.enabled();document.getElementById('gk-btn').textContent=on?'🟢 Gemini':'🔑 Gemini';const b=document.getElementById('engine-badge');if(b&&b.textContent)b.textContent=on?'GEMINI LIVE':'OFFLINE ENGINE — tap 🔑 to add Gemini key';}
+function openGeminiKey(){document.getElementById('gk-input').value=gemini.key();gkStatus(gemini.enabled()?'A key is saved on this device.':'No key saved — matches use the offline engine.');document.getElementById('gk-modal').classList.add('open');}
+function closeGeminiKey(){document.getElementById('gk-modal').classList.remove('open');}
+function cleanKey(v){return v.replace(/[\s"'“”‘’]/g,'');}
+function saveGeminiKey(){const v=cleanKey(document.getElementById('gk-input').value);if(!v){gkStatus('Please paste a key first.',false);return;}localStorage.setItem('fda_gemini_key',v);gkRefresh();gkStatus('Saved ✓ Tap "Test key" to check it works.',true);}
+function clearGeminiKey(){localStorage.removeItem('fda_gemini_key');document.getElementById('gk-input').value='';gkRefresh();gkStatus('Key removed. Offline engine will be used.');}
+async function testGeminiKey(){const v=cleanKey(document.getElementById('gk-input').value)||gemini.key();if(!v){gkStatus('Please paste a key first.',false);return;}gkStatus('Testing…');
+ try{const r=await fetch(GEMINI_URL+'?key='+encodeURIComponent(v),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:'Reply with OK'}]}]})});
+ if(r.ok){localStorage.setItem('fda_gemini_key',v);gkRefresh();gkStatus('🟢 Connected! Matches will now be simulated by Gemini.',true);}
+ else{let m='';try{m=(await r.json())?.error?.message||'';}catch(e){}gkStatus('🔴 Error '+r.status+': '+(m||'Key not accepted'),false);}}
+ catch(e){gkStatus('🔴 Could not reach Gemini — check your internet connection.',false);}}
+function showGeminiError(m){const t=document.getElementById('toast-msg');if(t&&typeof app!=='undefined'&&app.showToast){app.showToast('Gemini failed, using offline engine: '+m);}else{console.warn(m);}}
+document.getElementById('gk-modal').addEventListener('click',e=>{if(e.target.id==='gk-modal')closeGeminiKey();});
+gkRefresh();
 </script>
 </body>
 </html>
