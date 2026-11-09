@@ -45,6 +45,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
 
+/* Paste your free Google Gemini API key between the quotes below.
+   Leave it empty ("") and every match still runs on the built-in offline engine. */
+const GEMINI_API_KEY = "";
 const GEMINI_MODELS = ["gemini-3.8-flash","gemini-3.6-flash","gemini-3.5-flash-lite","gemini-flash-latest"];
 const gmUrl = m => "https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent";
 async function geminiFetch(key, body, signal){
@@ -2018,7 +2021,7 @@ const offlineEngine = {
 };
 
 const gemini = {
-  key(){try{return (localStorage.getItem('fda_gemini_key')||'').trim();}catch(e){return '';}},
+  key(){const k=(typeof GEMINI_API_KEY==='string'?GEMINI_API_KEY:'').trim();if(k)return k;try{return (localStorage.getItem('fda_gemini_key')||'').trim();}catch(e){return '';}},
   enabled(){return !!this.key();},
   lastError:'',
   async simulate(home,away,mode,signal){
@@ -2061,7 +2064,7 @@ const matchRoom = {
     const n=app.managers.length;
     this.fixtures=roundRobin(n);this.results=[];
     this.el('tour-format').textContent=n===2?'Championship Grand Final — one match decides the title.':`${n}-manager Round-Robin League — ${this.fixtures.length} fixtures, top of the table is crowned.`;
-    this.el('engine-badge').textContent=gemini.enabled()?'GEMINI LIVE':'OFFLINE ENGINE — tap 🔑 to add Gemini key';
+    this.el('engine-badge').textContent=gemini.enabled()?'GEMINI LIVE':'OFFLINE ENGINE';
     this.el('match-status').textContent='Ready for kickoff';this.el('match-scoreboard').hidden=true;this.el('champion').hidden=true;
     ['match-analysis','match-verdict','match-commentary'].forEach(id=>this.el(id).textContent='');
     this.el('league-wrap').hidden=n<3;
@@ -2153,43 +2156,8 @@ const matchRoom = {
 
 </script>
 
-<style>
-#gk-btn{position:fixed;top:12px;right:12px;z-index:9999;background:#f59e0b;color:#0f172a;font-weight:900;border:none;border-radius:999px;padding:10px 14px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer}
-#gk-modal{position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.85);display:none;align-items:center;justify-content:center;padding:16px}
-#gk-modal.open{display:flex}
-#gk-box{background:#0f172a;border:1px solid #334155;border-radius:18px;padding:20px;width:100%;max-width:420px;color:#e2e8f0;font-family:inherit}
-#gk-box h3{margin:0 0 6px;font-size:18px;font-weight:900;color:#fbbf24}
-#gk-box p{font-size:13px;color:#94a3b8;margin:0 0 12px}
-#gk-input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#020617;color:#fff;font-size:15px}
-#gk-box .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-#gk-box button{flex:1;padding:11px;border-radius:10px;border:none;font-weight:800;cursor:pointer;font-size:14px}
-.gk-save{background:#f59e0b;color:#0f172a}.gk-test{background:#1e293b;color:#e2e8f0;border:1px solid #475569!important}.gk-clear{background:#7f1d1d;color:#fecaca}.gk-close{background:transparent;color:#94a3b8}
-#gk-status{margin-top:12px;font-size:13px;font-weight:700;min-height:18px;word-break:break-word}
-</style>
-<button id="gk-btn" type="button" onclick="openGeminiKey()">🔑 Gemini</button>
-<div id="gk-modal" role="dialog" aria-modal="true" aria-labelledby="gk-title"><div id="gk-box">
-<h3 id="gk-title">🔑 Gemini API Key</h3>
-<p>Paste your key from Google AI Studio. It's saved only on this device's browser.</p>
-<input id="gk-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIzaSy...">
-<div class="row"><button class="gk-save" type="button" onclick="saveGeminiKey()">Save</button><button class="gk-test" type="button" onclick="testGeminiKey()">Test key</button></div>
-<div class="row"><button class="gk-clear" type="button" onclick="clearGeminiKey()">Remove key</button><button class="gk-close" type="button" onclick="closeGeminiKey()">Close</button></div>
-<div id="gk-status"></div></div></div>
 <script>
-function gkStatus(msg,ok){const s=document.getElementById('gk-status');s.textContent=msg;s.style.color=ok===true?'#4ade80':ok===false?'#f87171':'#cbd5e1';}
-function gkRefresh(){const on=gemini.enabled();document.getElementById('gk-btn').textContent=on?'🟢 Gemini':'🔑 Gemini';const b=document.getElementById('engine-badge');if(b&&b.textContent)b.textContent=on?'GEMINI LIVE':'OFFLINE ENGINE — tap 🔑 to add Gemini key';}
-function openGeminiKey(){document.getElementById('gk-input').value=gemini.key();gkStatus(gemini.enabled()?'A key is saved on this device.':'No key saved — matches use the offline engine.');document.getElementById('gk-modal').classList.add('open');}
-function closeGeminiKey(){document.getElementById('gk-modal').classList.remove('open');}
-function cleanKey(v){return v.replace(/[\s"'“”‘’]/g,'');}
-function saveGeminiKey(){const v=cleanKey(document.getElementById('gk-input').value);if(!v){gkStatus('Please paste a key first.',false);return;}localStorage.setItem('fda_gemini_key',v);gkRefresh();gkStatus('Saved ✓ Tap "Test key" to check it works.',true);}
-function clearGeminiKey(){localStorage.removeItem('fda_gemini_key');document.getElementById('gk-input').value='';gkRefresh();gkStatus('Key removed. Offline engine will be used.');}
-async function testGeminiKey(){const v=cleanKey(document.getElementById('gk-input').value)||gemini.key();if(!v){gkStatus('Please paste a key first.',false);return;}gkStatus('Testing…');
- try{const r=await geminiFetch(v,{contents:[{role:'user',parts:[{text:'Reply with OK'}]}]});
- if(r.ok){localStorage.setItem('fda_gemini_key',v);gkRefresh();gkStatus('🟢 Connected! Matches will now be simulated by Gemini.',true);}
- else{let m='';try{m=(await r.json())?.error?.message||'';}catch(e){}gkStatus('🔴 Error '+r.status+': '+(m||'Key not accepted'),false);}}
- catch(e){gkStatus('🔴 Could not reach Gemini — check your internet connection.',false);}}
 function showGeminiError(m){const t=document.getElementById('toast-msg');if(t&&typeof app!=='undefined'&&app.showToast){app.showToast('Gemini failed, using offline engine: '+m);}else{console.warn(m);}}
-document.getElementById('gk-modal').addEventListener('click',e=>{if(e.target.id==='gk-modal')closeGeminiKey();});
-gkRefresh();
 </script>
 </body>
 </html>
