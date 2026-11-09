@@ -45,7 +45,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_MODELS = ["gemini-3.8-flash","gemini-3.6-flash","gemini-3.5-flash-lite","gemini-flash-latest"];
+const gmUrl = m => "https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent";
+async function geminiFetch(key, body, signal){
+  let pref=''; try{pref=localStorage.getItem('fda_gemini_model')||'';}catch(e){}
+  const list=[...new Set([pref,...GEMINI_MODELS].filter(Boolean))]; let last=null;
+  for(const m of list){
+    const r=await fetch(gmUrl(m)+'?key='+encodeURIComponent(key),{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){try{localStorage.setItem('fda_gemini_model',m);}catch(e){} return r;}
+    last=r; if(r.status!==404 && r.status!==400) return r;
+  }
+  return last;
+}
 
         tailwind.config = {
             darkMode: 'class',
@@ -2019,11 +2030,10 @@ HOME: ${JSON.stringify(H)}
 AWAY: ${JSON.stringify(A)}
 Judge ONLY on football: player quality (rating 80-96), positional balance, tactics and chemistry. Money and auction prices do not exist and must have zero influence. The stronger, better-balanced squad should usually win; upsets should be rare. Produce a realistic 90-minute match with 10-14 minute-by-minute events (saves, fouls, tactical shifts, goals) naming drafted players only.
 Return ONLY JSON: {"analysis":string,"homeScore":int,"awayScore":int,"events":[{"minute":int,"homeScore":int,"awayScore":int,"goal":bool,"commentary":string}],"manOfTheMatch":string,"verdict":string}. Events sorted by minute, scores cumulative, last event minute 90 matching final score.`;
-    const res=await fetch(`${GEMINI_URL}?key=${encodeURIComponent(this.key())}`,{method:'POST',signal,headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:.3}})});
+    const res=await geminiFetch(this.key(),{contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:.3}},signal);
     if(!res.ok){let m='';try{m=(await res.json())?.error?.message||'';}catch(e){}throw new Error('Gemini '+res.status+(m?': '+m:''));}
     const data=await res.json();
-    const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+    const text=data?.candidates?.[0]?.content?.parts?.filter(p=>!p.thought).map(p=>p.text||'').join('')||'';
     const r=JSON.parse(text.replace(/^```json|```$/g,'').trim());
     if(!Array.isArray(r.events)||!r.events.length) throw new Error('bad report');
     r.events.sort((x,y)=>x.minute-y.minute);
@@ -2173,7 +2183,7 @@ function cleanKey(v){return v.replace(/[\s"'“”‘’]/g,'');}
 function saveGeminiKey(){const v=cleanKey(document.getElementById('gk-input').value);if(!v){gkStatus('Please paste a key first.',false);return;}localStorage.setItem('fda_gemini_key',v);gkRefresh();gkStatus('Saved ✓ Tap "Test key" to check it works.',true);}
 function clearGeminiKey(){localStorage.removeItem('fda_gemini_key');document.getElementById('gk-input').value='';gkRefresh();gkStatus('Key removed. Offline engine will be used.');}
 async function testGeminiKey(){const v=cleanKey(document.getElementById('gk-input').value)||gemini.key();if(!v){gkStatus('Please paste a key first.',false);return;}gkStatus('Testing…');
- try{const r=await fetch(GEMINI_URL+'?key='+encodeURIComponent(v),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:'Reply with OK'}]}]})});
+ try{const r=await geminiFetch(v,{contents:[{role:'user',parts:[{text:'Reply with OK'}]}]});
  if(r.ok){localStorage.setItem('fda_gemini_key',v);gkRefresh();gkStatus('🟢 Connected! Matches will now be simulated by Gemini.',true);}
  else{let m='';try{m=(await r.json())?.error?.message||'';}catch(e){}gkStatus('🔴 Error '+r.status+': '+(m||'Key not accepted'),false);}}
  catch(e){gkStatus('🔴 Could not reach Gemini — check your internet connection.',false);}}
